@@ -1,0 +1,33 @@
+﻿body {
+    /*    background-color:white; */
+}
+
+div {
+    text-align: center;
+    margin: 20px;
+    padding: 10px;
+    border-radius: 10px;
+    border-color: grey;
+    border-style: double;
+}
+
+button {
+    width: 80px;
+    height: 40px;
+    border-radius: 20px;
+    background-color: white;
+    background-image: radial-gradient(white, grey);
+}
+
+    button.submit {
+        background-image: radial-gradient(white, green);
+    }
+
+    button.reset {
+        background-image: radial-gradient(white, brown);
+    }
+
+    input.checkbox {
+        margin-left: 10px;
+        margin-right: 10px;
+    }

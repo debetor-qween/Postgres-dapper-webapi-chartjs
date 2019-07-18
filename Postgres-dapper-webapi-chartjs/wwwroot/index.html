@@ -1,0 +1,77 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>График временной зависимости используем Chat.js</title>
+    <link rel="stylesheet" type="text/css" href="/CSS/Common.css" />
+
+    <script src="/Lib/jquery-3.3.1.js" type="text/javascript"></script>
+
+</head>
+<body>
+    <h1>График временной зависимости y = f(t)</h1>
+    <div id="query_params_panel" class="panel">
+        <form id="query_params_form" class="form">
+            <h3>Параметры запроса</h3>
+            <!-- <label for="device_id">Устройство: </label>
+                <select id="device_id" name="device_id" multiple style="height: 40px"></select> -->
+            <fieldset id="device_id" name="device_id">
+                <legend> Выберите устройства: </legend>
+            </fieldset>
+
+            <label for="period_type_id">Период: </label>
+            <select id="period_type_id" name="period_type_id">
+                <option value="6">6 часов</option>
+                <option value="12">12 часов</option>
+                <option value="24">1 день</option>
+                <option value="48">2 дня</option>
+            </select>
+
+            <label for="startDate">Начало периода: </label>
+            <input type="datetime-local" id="startDate" name="startDate" value="2019-07-01T00:00" required />
+            <label for="endDate">Конец периода: </label>
+            <input type="datetime-local" id="endDate" name="endDate" value="2019-07-02T00:00" required />
+
+            <button class="submit" id="submit_button" name="submi_button" type="submit">Получить</button>
+            <button class="reset" id="cancel_button" name="cancel_button" type="reset">Очистить</button>
+        </form>
+    </div>
+    <div id="chart_panel" class="panel">
+        <h3>График на основе Chart.js</h3>
+    </div>
+
+    <script>
+        function documentIsLoaded() {
+            recalcEndDate();
+            var jqxhr = $.get('api/device/getdevicelist');
+            jqxhr.done(function (data) {
+                $.each(data, function (key, val) {
+                    // $('#device_id').append('<option value="' + val.id + '">' + val.name + '</option>');
+                    $('#device_id').append('<input type="checkbox" class="checkbox" name="' + val.name + '" value="' + val.id + '">' + val.name );
+                });
+            });
+            jqxhr.fail(function (data) {
+                alert('Не удалось получить данные об устройствах');
+            });
+        }
+
+        function recalcEndDate() {
+            var value = Number($('#period_type_id').val());
+            var date = new Date($('#startDate').val());
+            localOffset = Number(date.toString().substring(28, 31));
+            value = value + localOffset;
+            date.setHours(date.getHours() + value);
+            // alert(date.toISOString().substring(0, 16));
+            $('#endDate').val(date.toISOString().substring(0, 16));
+            $('#endDate').prop('disabled', true);
+        }
+
+        document.addEventListener("DOMContentLoaded", documentIsLoaded);
+         
+        $('#period_type_id').change(function () {
+            recalcEndDate();
+        });
+    </script>
+
+</body>
+</html>
