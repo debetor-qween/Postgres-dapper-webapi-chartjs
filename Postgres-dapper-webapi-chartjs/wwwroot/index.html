@@ -32,28 +32,56 @@
             <label for="endDate">Конец периода: </label>
             <input type="datetime-local" id="endDate" name="endDate" value="2019-07-02T00:00" required />
 
-            <button class="submit" id="submit_button" name="submi_button" type="submit">Получить</button>
+            <button class="submit" id="submit_button" name="submit_button" type="submit">Получить</button>
             <button class="reset" id="cancel_button" name="cancel_button" type="reset">Очистить</button>
         </form>
     </div>
     <div id="chart_panel" class="panel">
         <h3>График на основе Chart.js</h3>
     </div>
+    <div id="table_panel" class="panel">
+        <h3>Таблица с данными</h3>
+        <table id="data_table" class="data_table">
+            <thead id="data_table_header" class="data_table">
+                <tr>
+                    <th>id</th>
+                    <th>Время</th>
+                    <th>Значение</th>
+                    <th>Device_id</th>
+                </tr>
+            </thead>
+            <tbody id="data_table_body" class="data_table">
+            </tbody>
+        </table>
+    </div>
 
     <script>
+        var dataArray = {};
+
         function documentIsLoaded() {
             recalcEndDate();
             var jqxhr = $.get('api/device/getdevicelist');
             jqxhr.done(function (data) {
                 $.each(data, function (key, val) {
-                    // $('#device_id').append('<option value="' + val.id + '">' + val.name + '</option>');
                     $('#device_id').append('<input type="checkbox" class="checkbox" name="' + val.name + '" value="' + val.id + '">' + val.name );
                 });
             });
             jqxhr.fail(function (data) {
                 alert('Не удалось получить данные об устройствах');
             });
-        }
+        };
+
+        function getDataArray(device_id, startDate, endDate) {
+            var sDateLong = new Date(startDate).getTime() / 1000;
+            var eDateLong = new Date(endDate).getTime() / 1000;
+            var queryParams = `device_id=${device_id}&startDate=${sDateLong}&endDate=${eDateLong}`;
+            var jqxhr = $.get('api/chart/GetMValues', queryParams, function (data) {
+                $.each(data, function (key, val) {
+                    $('#data_table_body').append(`<tr><td>${val.id}</td><td>${(new Date(val.mtimestamp)).toLocaleString()}</td><td>${val.mvalue}</td><td>${val.device_id}</td></tr>`);
+                });
+            });
+
+        };
 
         function recalcEndDate() {
             var value = Number($('#period_type_id').val());
@@ -70,6 +98,17 @@
          
         $('#period_type_id').change(function () {
             recalcEndDate();
+        });
+
+        $('#submit_button').click(function (event) {
+            event.preventDefault();
+            // alert($('input.checkbox').length);
+            $('input.checkbox').each(function (index, elem) {
+                if (elem.checked) getDataArray(elem.value, $('#startDate').val(), $('#endDate').val());
+            });
+        });
+        $('#cancel_button').click(function () {
+            $('#data_table_body > tr').remove();
         });
     </script>
 

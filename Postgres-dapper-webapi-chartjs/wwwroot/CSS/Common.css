@@ -31,3 +31,16 @@ button {
         margin-left: 10px;
         margin-right: 10px;
     }
+
+    table {
+        width: 500px;
+        border-collapse: collapse;
+        margin-left: 200px;
+}
+
+    td, th {
+        text-align: center;
+        border: 1px solid gray;
+        margin-left: 3px;
+        margin-right: 3px;
+    }
