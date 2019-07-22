@@ -21,7 +21,7 @@ namespace Postgres_dapper_webapi_chartjs.Controllers
         }
 
 
-        // GET api/device/action
+        // GET api/Chart/action
         [HttpGet]
         public IEnumerable<MValue> GetMValues(int device_id, long startDate, long endDate)
         {
@@ -30,6 +30,19 @@ namespace Postgres_dapper_webapi_chartjs.Controllers
             DateTime eDate = epoch.AddSeconds((double)endDate).ToLocalTime();
 
             return _measureRepo.GetMValues(device_id, sDate, eDate);
+        }
+
+        // GET api/Chart/action
+        [HttpGet]
+        public IEnumerable<TChartPoint> GetTChartPoints(int device_id, long startDate, long endDate)
+        {
+            DateTime epoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+            DateTime sDate = epoch.AddSeconds((double)startDate).ToLocalTime();
+            DateTime eDate = epoch.AddSeconds((double)endDate).ToLocalTime();
+
+            var result = _measureRepo.GetTChartPoints(device_id, sDate, eDate);
+
+            return result;
         }
 
     }

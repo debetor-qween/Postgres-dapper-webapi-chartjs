@@ -6,10 +6,10 @@
     <link rel="stylesheet" type="text/css" href="/CSS/Common.css" />
 
     <script src="/Lib/jquery-3.3.1.js" type="text/javascript"></script>
+    <script src="/Lib/Chart.bundle.js" type="text/javascript"></script>
 
 </head>
 <body>
-    <h1>График временной зависимости y = f(t)</h1>
     <div id="query_params_panel" class="panel">
         <form id="query_params_form" class="form">
             <h3>Параметры запроса</h3>
@@ -38,6 +38,7 @@
     </div>
     <div id="chart_panel" class="panel">
         <h3>График на основе Chart.js</h3>
+        <canvas id="chart"></canvas>
     </div>
     <div id="table_panel" class="panel">
         <h3>Таблица с данными</h3>
@@ -56,9 +57,14 @@
     </div>
 
     <script>
-        var dataArray = {};
+        var chartDataSets = [];
+        var chart;
+        var ctx = document.getElementById('chart').getContext('2d');
+        ctx.canvas.width = 1000;
+        ctx.canvas.height = 300;
+        // var chart = new Chart(ctx, cfg);
 
-        function documentIsLoaded() {
+        function fillQueryParamsForm() {
             recalcEndDate();
             var jqxhr = $.get('api/device/getdevicelist');
             jqxhr.done(function (data) {
@@ -71,7 +77,7 @@
             });
         };
 
-        function getDataArray(device_id, startDate, endDate) {
+        function fillDataTable(device_id, startDate, endDate) {
             var sDateLong = new Date(startDate).getTime() / 1000;
             var eDateLong = new Date(endDate).getTime() / 1000;
             var queryParams = `device_id=${device_id}&startDate=${sDateLong}&endDate=${eDateLong}`;
@@ -80,7 +86,87 @@
                     $('#data_table_body').append(`<tr><td>${val.id}</td><td>${(new Date(val.mtimestamp)).toLocaleString()}</td><td>${val.mvalue}</td><td>${val.device_id}</td></tr>`);
                 });
             });
+        };
 
+        function fillChartDataSet(device_id, startDate, endDate, title) {
+            var DataArray = [];
+            var sDateLong = new Date(startDate).getTime() / 1000;
+            var eDateLong = new Date(endDate).getTime() / 1000;
+            var queryParams = `device_id=${device_id}&startDate=${sDateLong}&endDate=${eDateLong}`;
+            $.ajax({
+                url: 'api/chart/GetTChartPoints',
+                data: queryParams,
+                type: 'GET',
+                async: false,
+                success: function (data) {
+                    $.each(data, function (key, val) {
+                        var tPoint = { t: (new Date(val.t)).valueOf(), y: val.y };
+                        DataArray.push(tPoint);
+                    });
+                }
+            });
+
+            // var color = Chart.helpers.color;
+            var color = ['red', 'blue', 'black'];
+            var dataSet = {
+                label: title,
+                backgroundColor: 'lightyellow',
+                borderColor: color[chartDataSets.length],
+                data: DataArray,
+                type: 'line',
+                pointRadius: 0,
+                fill: false,
+                lineTension: 0,
+                borderWidth: 3
+            };
+            chartDataSets.push(dataSet);
+        };
+
+        function drawChart() {
+            var cfg = {
+                type: 'line',
+                data: {
+                    datasets: chartDataSets
+                },
+                options: {
+                    scales: {
+                        xAxes: [{
+                            type: 'time',
+                            time: {
+                                displayFormats: {
+                                    hour: 'h'
+                                }
+                            },
+                            distribution: 'linear',
+                            ticks: {
+                                source: 'data',
+                                autoSkip: true
+                            }
+                        }],
+                        yAxes: [{
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Температура'
+                            }
+                        }]
+                    },
+                    tooltips: {
+                        intersect: false,
+                        mode: 'index',
+                        callbacks: {
+                            label: function (tooltipItem, myData) {
+                                var label = myData.datasets[tooltipItem.datasetIndex].label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                label += parseFloat(tooltipItem.value).toFixed(2);
+                                return label;
+                            }
+                        }
+                    }
+                }
+            };
+            chart = new Chart(ctx, cfg);
         };
 
         function recalcEndDate() {
@@ -89,26 +175,35 @@
             localOffset = Number(date.toString().substring(28, 31));
             value = value + localOffset;
             date.setHours(date.getHours() + value);
-            // alert(date.toISOString().substring(0, 16));
             $('#endDate').val(date.toISOString().substring(0, 16));
             $('#endDate').prop('disabled', true);
         }
 
-        document.addEventListener("DOMContentLoaded", documentIsLoaded);
+        document.addEventListener("DOMContentLoaded", fillQueryParamsForm);
          
-        $('#period_type_id').change(function () {
-            recalcEndDate();
-        });
+        $('#period_type_id').change(function () {recalcEndDate();});
+        $('#startDate').change(function () {recalcEndDate();});
 
         $('#submit_button').click(function (event) {
             event.preventDefault();
-            // alert($('input.checkbox').length);
-            $('input.checkbox').each(function (index, elem) {
-                if (elem.checked) getDataArray(elem.value, $('#startDate').val(), $('#endDate').val());
+            // chart.destroy();
+            chartDataSets.length = 0;
+           $('input.checkbox').each(function (index, elem) {
+                if (elem.checked) {
+                    fillChartDataSet(elem.value, $('#startDate').val(), $('#endDate').val(), elem.name);
+                    fillDataTable(elem.value, $('#startDate').val(), $('#endDate').val());
+                };
             });
+            if (chartDataSets.length > 0) drawChart();
         });
-        $('#cancel_button').click(function () {
+
+        $('#cancel_button').click(function (event) {
+            event.preventDefault();
+            $('#period_type_id').val("6");
+            recalcEndDate();
             $('#data_table_body > tr').remove();
+            chart.destroy();
+            chartDataSets.length = 0;
         });
     </script>
 

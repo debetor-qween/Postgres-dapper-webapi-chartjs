@@ -35,5 +35,16 @@ namespace Postgres_dapper_webapi_chartjs.Repository
                 return dbConnection.Query<MValue>($"SELECT * FROM mvalues WHERE device_id = {device_id} AND mtimestamp BETWEEN '{startDate}' AND '{endDate}' ORDER BY id");
             }
         }
+
+        public IEnumerable<TChartPoint> GetTChartPoints(int device_id, DateTime startDate, DateTime endDate)
+        {
+            using (IDbConnection dbConnection = Connection)
+            {
+                dbConnection.Open();
+                IEnumerable<TChartPoint> result = dbConnection.Query<TChartPoint>($"SELECT mtimestamp AS t, mvalue AS y FROM mvalues WHERE device_id = {device_id} AND mtimestamp BETWEEN '{startDate}' AND '{endDate}' ORDER BY mtimestamp");
+                return result;
+            }
+        }
+
     }
 }
